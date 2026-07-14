@@ -16,27 +16,28 @@ const getInterviewQuestions = async (req, res) => {
     }
 
     const questionsText = await generateInterviewQuestions(
-  role,
-  difficulty,
-  questionCount
-);
+      role,
+      difficulty,
+      questionCount
+    );
 
-const questionsArray = questionsText
-  .split("\n")
-  .filter((q) => q.trim() !== "");
+    const questionsArray = questionsText
+      .split("\n")
+      .filter((q) => q.trim() !== "");
 
-const savedQuestion = await Question.create({
-  role,
-  difficulty,
-  questionCount,
-  questions: questionsArray,
-});
+    const savedQuestion = await Question.create({
+      user: req.user.id,
+      role,
+      difficulty,
+      questionCount,
+      questions: questionsArray,
+    });
 
-res.status(200).json({
-  success: true,
-  role,
-  questions: savedQuestion.questions,
-});
+    res.status(200).json({
+      success: true,
+      role,
+      questions: savedQuestion.questions,
+    });
   } catch (error) {
     console.error("Controller Error:", error);
 
@@ -49,8 +50,9 @@ res.status(200).json({
 
 const getQuestionHistory = async (req, res) => {
   try {
-    const history = await Question.find()
-      .sort({ createdAt: -1 });
+    const history = await Question.find({
+      user: req.user.id,
+    }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,

@@ -1,58 +1,44 @@
-const InterviewResult = require(
-  "../models/InterviewResult"
-);
+const InterviewResult = require("../models/InterviewResult");
+const ResumeAnalysis = require("../models/ResumeAnalysis");
+const Question = require("../models/Question");
 
-const ResumeAnalysis = require(
-  "../models/ResumeAnalysis"
-);
-
-const Question = require(
-  "../models/Question"
-);
-
-const getDashboardStats = async (
-  req,
-  res
-) => {
+const getDashboardStats = async (req, res) => {
   try {
+    const interviews = await InterviewResult.find({
+      user: req.user.id,
+    });
 
-    const interviews =
-      await InterviewResult.find();
-
-    const totalInterviews =
-      interviews.length;
+    const totalInterviews = interviews.length;
 
     const totalResumeAnalyses =
-      await ResumeAnalysis.countDocuments();
+      await ResumeAnalysis.countDocuments({
+        user: req.user.id,
+      });
 
-    const totalQuestionsGenerated =
-      await Question.countDocuments();
+    // Temporary until Question model supports user ownership
+   const totalQuestionsGenerated =
+  await Question.countDocuments({
+    user: req.user.id,
+  });
 
     let averageInterviewScore = 0;
 
-   if (interviews.length > 0) {
+    const validScores = interviews.filter(
+      (item) => typeof item.score === "number"
+    );
 
-  console.log("Interview Scores:");
-  console.log(interviews.map(item => item.score));
+    if (validScores.length > 0) {
+      const totalScore = validScores.reduce(
+        (sum, item) => sum + item.score,
+        0
+      );
 
-  const validScores = interviews.filter(
-  (item) => typeof item.score === "number"
-);
+      averageInterviewScore =
+        totalScore / validScores.length;
+    }
 
-if (validScores.length > 0) {
-  const totalScore = validScores.reduce(
-    (sum, item) => sum + item.score,
-    0
-  );
-
-  averageInterviewScore =
-    totalScore / validScores.length;
-}
-}
-console.log("Average Interview Score:", averageInterviewScore);
     res.status(200).json({
       success: true,
-
       stats: {
         totalInterviews,
         totalResumeAnalyses,
@@ -62,16 +48,11 @@ console.log("Average Interview Score:", averageInterviewScore);
     });
 
   } catch (error) {
-
-    console.error(
-      "Dashboard Error:",
-      error
-    );
+    console.error("Dashboard Error:", error);
 
     res.status(500).json({
       success: false,
-      message:
-        "Failed to load dashboard stats",
+      message: "Failed to load dashboard stats",
     });
   }
 };

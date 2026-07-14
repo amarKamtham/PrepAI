@@ -12,22 +12,20 @@ const evaluateInterviewAnswer = async (req, res) => {
       });
     }
 
-    // Evaluate answer using Groq
     const feedback = await evaluateAnswer(
       role,
       question,
       answer
     );
 
-    // Extract score (e.g. Score: 8/10)
     const scoreMatch = feedback.match(/(\d+)\/10/);
 
     const score = scoreMatch
       ? Number(scoreMatch[1])
       : 0;
 
-    // Save result
     const interview = await InterviewResult.create({
+      user: req.user.id,
       role,
       question,
       answer,
@@ -52,8 +50,9 @@ const evaluateInterviewAnswer = async (req, res) => {
 
 const getInterviewHistory = async (req, res) => {
   try {
-    const history = await InterviewResult.find()
-      .sort({ createdAt: -1 });
+    const history = await InterviewResult.find({
+      user: req.user.id,
+    }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
